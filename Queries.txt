@@ -1,0 +1,368 @@
+1) db.authors.find();
+
+2)Find books written by author with authorId 2:
+db.books.aggregate([
+  {
+    $match: {
+      bookId: 2
+    }
+  },
+  {
+    $lookup: {
+      from: "bookAuthors",
+      localField: "bookId",
+      foreignField: "bookId",
+      as: "bookAuthors"
+    }
+  }
+]);
+
+
+
+3)Find books written by author with authorId 2:
+db.books.aggregate([
+  {
+    $match: {
+      bookId: 2
+    }
+  },
+  {
+    $lookup: {
+      from: "bookAuthors",
+      localField: "bookId",
+      foreignField: "bookId",
+      as: "bookAuthors"
+    }
+  }
+]);
+    foreignField: "bookId",
+      as: "bookGategories"
+    }
+  },
+  {
+    $match: {
+      "bookGategories.categoryId": 1
+    }
+  }
+]);
+
+
+4)Find books published by "Издательство В":
+db.books.aggregate([
+  {
+    $lookup: {
+      from: "publishers",
+      localField: "publisherId",
+      foreignField: "publisherId",
+      as: "publishers"
+    }
+  },
+  {
+    $match: {
+      "publishers.publisherName": "Издательство В"
+    }
+  }
+]);
+
+
+5) Find books published after 2022:
+db.books.find({ "publicationDate": { $gt: new Date("2021-01-01T00:00:00.000Z") } });
+
+
+6)Find customers from "Москва":
+db.customers.find({ "city": "Москва" });
+
+
+7)Find orders with a total greater than 10000:
+db.orders.find({ "total": { $gt: 10000 } });
+
+
+8)Find books with a publication date in 2022 and 2023:
+db.books.find({ "publicationDate": { $gte: new Date("2022-01-01T00:00:00.000Z"), $lt: new Date("2024-01-01T00:00:00.000Z") } });
+
+
+9)Find books in the "Категория 1" category and published by "Издательство В":
+db.books.find().populate("bookGategories", { "categoryId": 1 }).populate("publishers", { "publisherName": "Издательство В" });
+
+
+10)Find orders with a total between 10000 and 20000:
+db.orders.find({ "total": { $gte: 10000, $lte: 20000 } });
+
+
+11) Find authors who have written multiple books:
+db.authors.aggregate([
+  {
+    $lookup: {
+      from: "bookAuthors",
+      localField: "authorId",
+      foreignField: "authorId",
+      as: "books"
+    }
+  },
+  {
+    $match: {
+      "books": { $exists: true, $not: { $size: 0 } }
+    }
+  },
+  {
+    $project: {
+      "authorId": 1,
+      "authorName": 1,
+      "authorSurname": 1,
+      "bookCount": { $size: "$books" }
+    }
+  }
+]);
+
+
+12)Count the total number of books in each category:
+db.books.aggregate([
+  {
+    $lookup: {
+      from: "bookGategories",
+      localField: "bookId",
+      foreignField: "bookId",
+      as: "categories"
+    }
+  },
+  {
+    $group: {
+      _id: "$categories.categoryId",
+      category: { $first: "$categories.categoryName" },
+      bookCount: { $sum: 1 }
+    }
+  }
+]);
+
+
+13) Calculate the total sales revenue for each book:
+db.orderItems.aggregate([
+  {
+    $lookup: {
+      from: "books",
+      localField: "bookId",
+      foreignField: "bookId",
+      as: "bookInfo"
+    }
+  },
+  {
+    $project: {
+      bookId: 1,
+      bookTitle: { $first: "$bookInfo.bookTitle" },
+      revenue: { $multiply: ["$quantity", { $first: "$bookInfo.bookPrice" }] }
+    }
+  },
+  {
+    $group: {
+      _id: "$bookId",
+      bookTitle: { $first: "$bookTitle" },
+      totalRevenue: { $sum: "$revenue" }
+    }
+  }
+]);
+
+
+14)Find the top 5 bestselling books by quantity sold:
+db.orderItems.aggregate([
+  {
+    $group: {
+      _id: "$bookId",
+      totalQuantity: { $sum: "$quantity" }
+    }
+  },
+  {
+    $sort: { "totalQuantity": -1 }
+  },
+  {
+    $limit: 5
+  },
+  {
+    $lookup: {
+      from: "books",
+      localField: "_id",
+      foreignField: "bookId",
+      as: "bookInfo"
+    }
+  },
+  {
+    $project: {
+      bookId: "$_id",
+      bookTitle: { $first: "$bookInfo.bookTitle" },
+      totalQuantity: 1
+    }
+  }
+]);
+
+
+15) Find the customers who made orders with a total value exceeding 5000:
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "customers",
+      localField: "customerId",
+      foreignField: "customerId",
+      as: "customerInfo"
+    }
+  },
+  {
+    $unwind: "$customerInfo"
+  },
+  {
+    $group: {
+      _id: "$customerId",
+      customerName: { $first: "$customerInfo.firstName" },
+      totalValue: { $sum: "$total" }
+    }
+  },
+  {
+    $match: {
+      totalValue: { $gt: 5000 }
+    }
+  }
+]);
+
+
+
+16)
+Find the customers who have purchased books from a specific publisher:
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "customers",
+      localField: "customerId",
+      foreignField: "customerId",
+      as: "customerInfo"
+    }
+  },
+  {
+    $lookup: {
+      from: "orderItems",
+      localField: "orderId",
+      foreignField: "orderId",
+      as: "orderItems"
+    }
+  },
+  {
+    $unwind: "$customerInfo"
+  },
+  {
+    $unwind: "$orderItems"
+  },
+  {
+    $lookup: {
+      from: "books",
+      localField: "orderItems.bookId",
+      foreignField: "bookId",
+      as: "bookInfo"
+    }
+  },
+  {
+    $unwind: "$bookInfo"
+  },
+  {
+    $lookup: {
+      from: "publishers",
+      localField: "bookInfo.publisherId",
+      foreignField: "publisherId",
+      as: "publisherInfo"
+    }
+  },
+  {
+
+    $unwind: "$publisherInfo"
+  },
+  {
+    $match: {
+      "publisherInfo.publisherName": "Издательство В"
+    }
+  },
+  {
+    $project: {
+      customerId: 1,
+      customerName: "$customerInfo.firstName",
+      publisherName: "$publisherInfo.publisherName"
+    }
+  }
+]);
+
+
+17) Find the books that have not been ordered:
+db.BOOKS.aggregate([
+  {
+    $lookup: {
+      from: "ORDERITEMS",
+      localField: "BOOK_ID",
+      foreignField: "BOOK_ID",
+      as: "orders"
+    }
+  },
+  { $match: { orders: { $size: 0 } } }
+])
+
+
+
+18)Find the top 5 most active customers based on the number of books they have ordered:
+db.ORDERITEMS.aggregate([
+  {
+    $lookup: {
+      from: "ORDERS",
+      localField: "ORDER_ID",
+      foreignField: "ORDER_ID",
+      as: "orders"
+    }
+  },
+  { $unwind: "$orders" },
+  {
+    $group: {
+      _id: "$orders.CUSTOMER_ID",
+      totalBooksOrdered: { $sum: "$QUANTITY" }
+    }
+  },
+  { $sort: { totalBooksOrdered: -1 } },
+  { $limit: 5 }
+])
+
+
+19) Find all books written by a specific author:
+db.BOOKAUTHORS.aggregate([
+  { $match: { AUTHOR_ID: authorId } },
+  {
+    $lookup: {
+      from: "BOOKS",
+      localField: "BOOK_ID",
+      foreignField: "BOOK_ID",
+      as: "books"
+    }
+  },
+  { $unwind: "$books" }
+])
+
+
+20) Find all books ordered by a specific customer:
+db.orderItems.aggregate([
+  {
+    $lookup: {
+      from: "books",
+      localField: "bookId",
+      foreignField: "bookId",
+      as: "books"
+    }
+  },
+  { $unwind: "$books" },
+  {
+    $lookup: {
+      from: "orders",
+      localField: "orderId",
+      foreignField: "orderId",
+      as: "orders"
+    }
+  },
+  { $unwind: "$orders" },
+  { $match: { "orders.customerId": 4} }
+])
+
+
+
+
+
+x`

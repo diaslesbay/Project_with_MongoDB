@@ -1,0 +1,43 @@
+// Books Collection
+db.createCollection("Books")
+db.Books.createIndex({ Book_ID: 1 }, { unique: true })
+db.Books.createIndex({ Publisher_ID: 1 })
+
+// Authors Collection
+db.createCollection("Authors")
+db.Authors.createIndex({ Author_ID: 1 }, { unique: true })
+
+// BookAuthors Collection (Many-to-Many relationship between Books and Authors)
+db.createCollection("BookAuthors")
+db.BookAuthors.createIndex({ Book_ID: 1, Author_ID: 1 }, { unique: true })
+db.BookAuthors.createIndex({ Book_ID: 1 })
+db.BookAuthors.createIndex({ Author_ID: 1 })
+
+// Publishers Collection
+db.createCollection("Publishers")
+db.Publishers.createIndex({ Publisher_ID: 1 }, { unique: true })
+
+// Categories Collection
+db.createCollection("Categories")
+db.Categories.createIndex({ Category_ID: 1 }, { unique: true })
+
+// BookCategories Collection (Many-to-Many relationship between Books and Categories)
+db.createCollection("BookCategories")
+db.BookCategories.createIndex({ Book_ID: 1, Category_ID: 1 }, { unique: true })
+db.BookCategories.createIndex({ Book_ID: 1 })
+db.BookCategories.createIndex({ Category_ID: 1 })
+
+// Orders Collection
+db.createCollection("Orders")
+db.Orders.createIndex({ Order_ID: 1 }, { unique: true })
+db.Orders.createIndex({ Customer_ID: 1 })
+
+// OrderItems Collection (Many-to-One relationship between Orders and Books)
+db.createCollection("OrderItems")
+db.OrderItems.createIndex({ Order_Item_ID: 1 }, { unique: true })
+db.OrderItems.createIndex({ Order_ID: 1 })
+db.OrderItems.createIndex({ Book_ID: 1 })
+
+// Customers Collection
+db.createCollection("Customers")
+db.Customers.createIndex({ Customer_ID: 1 }, { unique: true })
